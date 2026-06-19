@@ -1,0 +1,5 @@
+package com.gravity.configurator
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

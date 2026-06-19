@@ -1,0 +1,168 @@
+Create a flutter project which will work responsive in web app and mobile
+base url : https://gravity.lijutharayil.com
+package name : com.gravity.configurator
+screen 1 : login screen - use the car_seat.png image as backgound image and add some overlay, attractive screen with a single button called "Get started"
+clicking on it should call following POST api : /api/login
+payload is 
+email:user@gmail.com
+password:password123
+response is like {
+    "success": true,
+    "message": "Login successful",
+    "data": {
+        "user": {
+            "id": 1,
+            "name": "Test User",
+            "email": "user@gmail.com"
+        },
+        "token": "2|luNpTUQHyuodRxVDu3UzA51psNiTtQ9cDIqdj3Ja0635f009",
+        "token_type": "Bearer"
+    }
+}
+screen 2 : design list screen/home screen - list the items in a grid with image, name and type. clicking on item should navigate to screen3/configurator.
+GET api for grid data : /api/seat-designs
+response is like : {
+    "success": true,
+    "data": [
+        {
+            "id": 2,
+            "name_en": "Design Test 2",
+            "name_ar": "اختبار التصميم 2",
+            "image": "https://gravity.lijutharayil.com/storage/seat-design-layouts/yNFDUGC4hJHdr9xJQ2aZQ1sQOb7LjoIWrA0cBv2C.png",
+            "base_image": null,
+            "status": "active",
+            "currency": "AED",
+            "type": "Leather",
+            "created_at": "2026-03-12T03:52:23.000000Z"
+        },
+        {
+            "id": 1,
+            "name_en": "Design Test 1",
+            "name_ar": "اختبار التصميم 1",
+            "image": "https://gravity.lijutharayil.com/storage/seat-design-layouts/q2LY27JZLPXdw3FFpporvNYboXhhTZDF13NB5mXa.png",
+            "base_image": "https://gravity.lijutharayil.com/storage/seat-design-base/7gLKDAK9tSYV3OP1UwqfxePC59vMCoApxMHF8Zik.png",
+            "status": "active",
+            "currency": "AED",
+            "type": "Leather",
+            "created_at": "2026-03-12T03:51:56.000000Z"
+        }
+    ]
+}
+
+screen 3 : configurator screen - a details screen with image, name, type, horizontal scrollable list of items for each item in layers data (section 1, section 2, threads). list is the variants list and
+option to change parts of image like when clicking on the horizontal scroll list item it should change the corresponding part in image. place base_image initially then add section 1 above it then section 2 above it and finnaly threads above it. 
+GET api to call for this page : /api/seat-designs/1
+response is like : {
+    "success": true,
+    "data": {
+        "id": 1,
+        "name_en": "Design Test 1",
+        "name_ar": "اختبار التصميم 1",
+        "image": "https://gravity.lijutharayil.com/storage/seat-design-layouts/q2LY27JZLPXdw3FFpporvNYboXhhTZDF13NB5mXa.png",
+        "base_image": "https://gravity.lijutharayil.com/storage/seat-design-base/7gLKDAK9tSYV3OP1UwqfxePC59vMCoApxMHF8Zik.png",
+        "status": "active",
+        "currency": "AED",
+        "type": "Leather",
+        "created_at": "2026-03-12T03:51:56.000000Z",
+        "layers": [
+            {
+                "id": 1,
+                "name": "Section 1",
+                "sort_order": 1,
+                "variants": [
+                    {
+                        "id": 1,
+                        "name": "551-GTDLG-Light Grey",
+                        "color_code": "#7c7c81",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/LElUIgHmq3PX2tfwPs3VpT1z8JadMubrqTOPIuAs.png",
+                        "sort_order": 1
+                    },
+                    {
+                        "id": 2,
+                        "name": "552-GTDLBN-Light Beige New",
+                        "color_code": "#d9ccaf",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/t8FSkGQg8SuKTwL4cLi2S6GsbyTIOtjQ6al9XY2L.png",
+                        "sort_order": 2
+                    },
+                    {
+                        "id": 3,
+                        "name": "553-GTDBLK-Black",
+                        "color_code": "#141414",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/XL3CrAQNRcDWzqQKk1WriqleVBPlEeLcnlGDchd9.png",
+                        "sort_order": 3
+                    },
+                    {
+                        "id": 4,
+                        "name": "554-GTDRB-Red Beige",
+                        "color_code": "#c2864d",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/8FZHOzKdYMV1fLQwkBPKYvPlNm5oHnlxWcUJR26M.png",
+                        "sort_order": 4
+                    },
+                    {
+                        "id": 5,
+                        "name": "555-GTDR-Red",
+                        "color_code": "#db484e",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/iTlvClDIc6pB5oj1HW42FwLLKKNK3U9Eh6qBxFJJ.png",
+                        "sort_order": 5
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "name": "Section 2",
+                "sort_order": 2,
+                "variants": [
+                    {
+                        "id": 6,
+                        "name": "501-GTPST-Saman Tan",
+                        "color_code": "#b05537",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/c6zPuWWDaTGf05PrzmRCccxvR0ofwZ42qw0yQJUS.png",
+                        "sort_order": 1
+                    },
+                    {
+                        "id": 7,
+                        "name": "502-GTPRB-Red Beige",
+                        "color_code": "#c2864d",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/cMt8X1AuLciXjVE2yAuk8x86Jh0u1qgQQpDXyrE0.png",
+                        "sort_order": 2
+                    },
+                    {
+                        "id": 8,
+                        "name": "503-GTPDG-Dark Grey",
+                        "color_code": "#383841",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/HBYew7EQD7CQNfSvVp5gLrP4blZftUDF0Xved7JT.png",
+                        "sort_order": 3
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "name": "Thread",
+                "sort_order": 3,
+                "variants": [
+                    {
+                        "id": 9,
+                        "name": "G-1013-Orient",
+                        "color_code": "#ad6447",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/r7pGQGeAe5X2sSprRvlCzVTsP4h27EDmtTOkCZHL.png",
+                        "sort_order": 1
+                    },
+                    {
+                        "id": 10,
+                        "name": "G-1036-Dark Beige",
+                        "color_code": "#bea083",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/d5kU7lXlkIQoNfKr6iFYfJGYdLeDM5NpHNJBsiJe.png",
+                        "sort_order": 2
+                    },
+                    {
+                        "id": 11,
+                        "name": "G-1052-Saman Tan",
+                        "color_code": "#7e4426",
+                        "image": "https://gravity.lijutharayil.com/storage/seat-design-variants/6stqLbmBkMTKZM89VUHgYUYdhw0vVzPSDOGwsDSg.png",
+                        "sort_order": 3
+                    }
+                ]
+            }
+        ]
+    }
+}
