@@ -36,9 +36,7 @@ class _ConfiguratorAppState extends State<ConfiguratorApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _authProvider),
-        ChangeNotifierProvider(
-          create: (_) => DesignListProvider(_apiService),
-        ),
+        ChangeNotifierProvider(create: (_) => DesignListProvider(_apiService)),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
@@ -52,14 +50,18 @@ class _ConfiguratorAppState extends State<ConfiguratorApp> {
                 case '/':
                   if (auth.status == AuthStatus.authenticated) {
                     return MaterialPageRoute(
-                        builder: (_) => const DesignListScreen());
+                      builder: (_) => const DesignListScreen(),
+                    );
                   }
-                  return MaterialPageRoute(
-                      builder: (_) => const LoginScreen());
+                  return MaterialPageRoute(builder: (_) => const LoginScreen());
 
                 case '/designs':
                   return MaterialPageRoute(
-                      builder: (_) => const DesignListScreen());
+                    builder: (_) => const DesignListScreen(),
+                  );
+
+                case '/get-started':
+                  return MaterialPageRoute(builder: (_) => const LoginScreen());
 
                 case '/configurator':
                   final id = settings.arguments as int;
@@ -71,8 +73,7 @@ class _ConfiguratorAppState extends State<ConfiguratorApp> {
                   );
 
                 default:
-                  return MaterialPageRoute(
-                      builder: (_) => const LoginScreen());
+                  return MaterialPageRoute(builder: (_) => const LoginScreen());
               }
             },
           );

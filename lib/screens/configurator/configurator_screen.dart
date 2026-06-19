@@ -4,6 +4,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/design_provider.dart';
 import '../../models/seat_design_detail_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../commondesign/common_wave_design.dart';
+
+const List<String> _layerDisplayNames = [
+  'Primary Color',
+  'Central Panel',
+  'Thread Color',
+];
+
+String _displayLayerName(int index, String fallback) {
+  if (index < _layerDisplayNames.length) return _layerDisplayNames[index];
+  return fallback;
+}
 
 class ConfiguratorScreen extends StatefulWidget {
   final int designId;
@@ -26,54 +38,71 @@ class _ConfiguratorScreenState extends State<ConfiguratorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF202020),
         title: const Text(
           'Configurator',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Seat Designs',
+          onPressed: () {
+            Navigator.of(context).pushReplacementNamed('/designs');
+          },
         ),
       ),
-      body: Consumer<DesignDetailProvider>(
-        builder: (context, provider, _) {
-          switch (provider.status) {
-            case LoadingStatus.loading:
-              return const Center(
-                child: CircularProgressIndicator(color: AppTheme.accentColor),
-              );
-
-            case LoadingStatus.error:
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: AppTheme.accentColor, size: 48),
-                    const SizedBox(height: 12),
-                    Text(
-                      provider.errorMessage ?? 'Failed to load design',
-                      style: const TextStyle(color: AppTheme.textMuted),
-                      textAlign: TextAlign.center,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CommonWaveDesign(),
+          Consumer<DesignDetailProvider>(
+            builder: (context, provider, _) {
+              switch (provider.status) {
+                case LoadingStatus.loading:
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.accentColor,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () =>
-                          provider.fetchDetail(widget.designId),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
+                  );
 
-            case LoadingStatus.success:
-            case LoadingStatus.idle:
-              if (provider.detail == null) return const SizedBox.shrink();
-              return _ConfiguratorBody(provider: provider);
-          }
-        },
+                case LoadingStatus.error:
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppTheme.accentColor,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          provider.errorMessage ?? 'Failed to load design',
+                          style: const TextStyle(color: AppTheme.textMuted),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () =>
+                              provider.fetchDetail(widget.designId),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                case LoadingStatus.success:
+                case LoadingStatus.idle:
+                  if (provider.detail == null) return const SizedBox.shrink();
+                  return _ConfiguratorBody(provider: provider);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -89,7 +118,7 @@ class _ConfiguratorBody extends StatelessWidget {
     final detail = provider.detail!;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 768;
+        final isWide = constraints.maxWidth >= 900;
         if (isWide) {
           return _WideLayout(detail: detail, provider: provider);
         }
@@ -109,30 +138,38 @@ class _WideLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Left: stacked image
-        Expanded(
-          flex: 5,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DesignHeader(detail: detail),
-                const SizedBox(height: 20),
-                Expanded(child: _LayeredImage(provider: provider)),
-              ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1320),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left: stacked image
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DesignHeader(detail: detail),
+                    const SizedBox(height: 20),
+                    Expanded(child: _LayeredImage(provider: provider)),
+                  ],
+                ),
+              ),
             ),
-          ),
+            // Right: layer selectors
+            Expanded(
+              flex: 4,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 96),
+                child: _LayerSelectorPanel(detail: detail, provider: provider),
+              ),
+            ),
+          ],
         ),
-        // Right: layer selectors
-        Expanded(
-          flex: 4,
-          child: _LayerSelectorPanel(detail: detail, provider: provider),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -147,26 +184,45 @@ class _NarrowLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: _DesignHeader(detail: detail),
-          ),
-          const SizedBox(height: 12),
-          AspectRatio(
-            aspectRatio: 1.2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _LayeredImage(provider: provider),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final imageAspectRatio = constraints.maxWidth < 360 ? 0.98 : 1.1;
+        final horizontalInset = constraints.maxWidth < 360 ? 8.0 : 10.0;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 96),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalInset + 6,
+                      16,
+                      horizontalInset + 6,
+                      0,
+                    ),
+                    child: _DesignHeader(detail: detail),
+                  ),
+                  const SizedBox(height: 12),
+                  AspectRatio(
+                    aspectRatio: imageAspectRatio,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalInset,
+                      ),
+                      child: _LayeredImage(provider: provider),
+                    ),
+                  ),
+                  _LayerSelectorPanel(detail: detail, provider: provider),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          _LayerSelectorPanel(detail: detail, provider: provider),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -183,20 +239,12 @@ class _DesignHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          detail.nameEn,
-          style: const TextStyle(
-            color: AppTheme.textLight,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.accentColor.withAlpha(51),
                 borderRadius: BorderRadius.circular(20),
@@ -211,20 +259,16 @@ class _DesignHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.cardColor,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Color(0xFFE2E2E2), width: 1),
               ),
               child: Text(
                 detail.currency,
-                style: const TextStyle(
-                  color: AppTheme.textMuted,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
               ),
             ),
           ],
@@ -249,25 +293,26 @@ class _LayeredImage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-
           // Variant layers in sort_order (layers are already sorted)
           for (var i = 0; i < detail.layers.length; i++)
-            Builder(builder: (ctx) {
-              final variant = provider.getSelectedVariant(i);
-              if (variant == null) return const SizedBox.shrink();
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _NetworkLayerImage(
-                  key: ValueKey(variant.image),
-                  url: variant.image,
-                ),
-              );
-            }),
+            Builder(
+              builder: (ctx) {
+                final variant = provider.getSelectedVariant(i);
+                if (variant == null) return const SizedBox.shrink();
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _NetworkLayerImage(
+                    key: ValueKey(variant.image),
+                    url: variant.image,
+                  ),
+                );
+              },
+            ),
           // Base image (bottom layer)
           if (detail.baseImage != null)
             _NetworkLayerImage(url: detail.baseImage!)
           else
-            Container(color: AppTheme.surfaceColor),
+            Container(color: Colors.white),
         ],
       ),
     );
@@ -293,28 +338,120 @@ class _NetworkLayerImage extends StatelessWidget {
 
 // ─── Layer selector panel ─────────────────────────────────────────────────────
 
-class _LayerSelectorPanel extends StatelessWidget {
+class _LayerSelectorPanel extends StatefulWidget {
   final SeatDesignDetail detail;
   final DesignDetailProvider provider;
 
-  const _LayerSelectorPanel(
-      {required this.detail, required this.provider});
+  const _LayerSelectorPanel({required this.detail, required this.provider});
+
+  @override
+  State<_LayerSelectorPanel> createState() => _LayerSelectorPanelState();
+}
+
+class _LayerSelectorPanelState extends State<_LayerSelectorPanel>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  int get _tabCount =>
+      widget.detail.layers.length < 3 ? widget.detail.layers.length : 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabCount, vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _LayerSelectorPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldCount = oldWidget.detail.layers.length < 3
+        ? oldWidget.detail.layers.length
+        : 3;
+    if (oldCount != _tabCount) {
+      _tabController.dispose();
+      _tabController = TabController(length: _tabCount, vsync: this);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: detail.layers.length,
-      itemBuilder: (context, layerIndex) {
-        final layer = detail.layers[layerIndex];
-        return _LayerRow(
-          layer: layer,
-          layerIndex: layerIndex,
-          provider: provider,
-        );
-      },
+    if (_tabCount == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFE2E2E2), width: 1),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(18),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              dividerColor: Colors.transparent,
+              indicatorColor: AppTheme.accentColor,
+              indicatorSize: TabBarIndicatorSize.tab,
+              labelColor: AppTheme.accentColor,
+              unselectedLabelColor: AppTheme.textMuted,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: List.generate(
+                _tabCount,
+                (index) => Tab(
+                  text: _displayLayerName(
+                    index,
+                    widget.detail.layers[index].name,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (
+            var layerIndex = 0;
+            layerIndex < widget.detail.layers.length;
+            layerIndex++
+          )
+            _LayerRow(
+              layer: widget.detail.layers[layerIndex],
+              layerIndex: layerIndex,
+              provider: widget.provider,
+              showHeader: layerIndex >= _tabCount,
+              onVariantSelected: () {
+                if (layerIndex < _tabCount) {
+                  _tabController.animateTo(
+                    layerIndex,
+                    duration: const Duration(milliseconds: 180),
+                  );
+                }
+              },
+            ),
+        ],
+      ),
     );
   }
 }
@@ -323,11 +460,15 @@ class _LayerRow extends StatelessWidget {
   final DesignLayer layer;
   final int layerIndex;
   final DesignDetailProvider provider;
+  final bool showHeader;
+  final VoidCallback onVariantSelected;
 
   const _LayerRow({
     required this.layer,
     required this.layerIndex,
     required this.provider,
+    this.showHeader = true,
+    required this.onVariantSelected,
   });
 
   @override
@@ -338,35 +479,40 @@ class _LayerRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Layer name
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: AppTheme.accentColor,
-                  borderRadius: BorderRadius.circular(2),
+          if (showHeader) ...[
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                Container(
+                  width: 4,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                layer.name,
-                style: const TextStyle(
-                  color: AppTheme.textLight,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+                Text(
+                  _displayLayerName(layerIndex, layer.name),
+                  style: const TextStyle(
+                    color: Color(0xFF202020),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${layer.variants.length} options',
-                style: const TextStyle(
-                    color: AppTheme.textMuted, fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+                Text(
+                  '${layer.variants.length} options',
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
           // Horizontal variant scroll
           SizedBox(
             height: 90,
@@ -382,8 +528,10 @@ class _LayerRow extends StatelessWidget {
                 return _VariantTile(
                   variant: variant,
                   isSelected: isSelected,
-                  onTap: () =>
-                      provider.selectVariant(layerIndex, variantIndex),
+                  onTap: () {
+                    onVariantSelected();
+                    provider.selectVariant(layerIndex, variantIndex);
+                  },
                 );
               },
             ),
@@ -420,14 +568,21 @@ class _VariantTile extends StatelessWidget {
         width: 72,
         margin: const EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.accentColor.withAlpha(38)
-              : AppTheme.cardColor,
+          color: isSelected ? AppTheme.accentColor.withAlpha(38) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppTheme.accentColor : Colors.transparent,
+            color: isSelected ? AppTheme.accentColor : const Color(0xFFE2E2E2),
             width: 2,
           ),
+          boxShadow: isSelected
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(18),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -448,7 +603,7 @@ class _VariantTile extends StatelessWidget {
                         BoxShadow(
                           color: AppTheme.accentColor.withAlpha(77),
                           blurRadius: 6,
-                        )
+                        ),
                       ]
                     : null,
               ),
@@ -459,12 +614,9 @@ class _VariantTile extends StatelessWidget {
               child: Text(
                 variant.name.split('-').last.trim(),
                 style: TextStyle(
-                  color: isSelected
-                      ? AppTheme.accentColor
-                      : AppTheme.textMuted,
+                  color: isSelected ? AppTheme.accentColor : AppTheme.textMuted,
                   fontSize: 9,
-                  fontWeight:
-                      isSelected ? FontWeight.w700 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,

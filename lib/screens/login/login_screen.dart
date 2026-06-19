@@ -48,20 +48,10 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _handleGetStarted(BuildContext context) async {
+  void _handleGetStarted(BuildContext context) {
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.login();
-    if (!context.mounted) return;
-    if (success) {
-      Navigator.of(context).pushReplacementNamed('/designs');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Login failed'),
-          backgroundColor: AppTheme.accentColor,
-        ),
-      );
-    }
+    authProvider.login();
+    Navigator.of(context).pushReplacementNamed('/designs');
   }
 
   @override
@@ -70,156 +60,192 @@ class _LoginScreenState extends State<LoginScreen>
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final screenWidth = MediaQuery.sizeOf(context).width;
-          final carouselHeight = (constraints.maxHeight * 0.32)
+          final screenSize = MediaQuery.sizeOf(context);
+          final screenWidth = screenSize.width;
+          final contentHeight = constraints.maxHeight < 700
+              ? 700.0
+              : constraints.maxHeight;
+          final contentWidth = screenWidth.clamp(320.0, 520.0).toDouble();
+          final carouselHeight = (contentHeight * 0.32)
               .clamp(220.0, 310.0)
               .toDouble();
-          final carouselImageWidth = screenWidth * 0.70;
+          final carouselImageWidth = (contentWidth * 0.70).clamp(230.0, 360.0);
+          final titleTopPadding = (contentHeight * 0.10)
+              .clamp(56.0, 88.0)
+              .toDouble();
+          final carouselTop = (contentHeight * 0.29)
+              .clamp(190.0, 300.0)
+              .toDouble();
+          final buttonBottom = (contentHeight * 0.24)
+              .clamp(150.0, 240.0)
+              .toDouble();
+          final horizontalButtonInset =
+              (((screenWidth - contentWidth) / 2) + 60).clamp(
+                16.0,
+                double.infinity,
+              );
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              const CommonWaveDesign(),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 88),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'GRAVITY',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFF202020),
-                              fontSize: 34,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2.8,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Configurator',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFFE94560),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: constraints.maxHeight * 0.29,
-                left: 0,
-                right: 0,
-                height: carouselHeight,
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: CarouselWidget3D(
-                    radius: screenWidth,
-                    childScale: 0.9,
-                    dragEndBehavior: DragEndBehavior.snapToNearest,
-                    backgroundTapBehavior:
-                        BackgroundTapBehavior.startAndSnapToNearest,
-                    childTapBehavior: ChildTapBehavior.transparent,
-                    isDragInteractive: true,
-                    onlyRenderForeground: false,
-                    clockwise: false,
-                    backgroundBlur: 3,
-                    spinWhileRotating: true,
-                    shouldRotate: true,
-                    timeForFullRevolution: 20000,
-                    snapTimeInMillis: 100,
-                    perspectiveStrength: 0.001,
-                    dragSensitivity: 1.0,
-                    onValueChanged: (newValue) {
-                      debugPrint('$newValue');
-                    },
-                    background: null,
-                    core: null,
-                    children: List.generate(
-                      _carouselImages.length,
-                      (index) => CarouselChild(
-                        child: SizedBox(
-                          width: carouselImageWidth,
-                          height: carouselHeight,
-                          child: Image.asset(
-                            _carouselImages[index],
-                            fit: BoxFit.cover,
+          return SingleChildScrollView(
+            physics: contentHeight > constraints.maxHeight
+                ? const ClampingScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
+            child: SizedBox(
+              height: contentHeight,
+              width: screenWidth,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const CommonWaveDesign(),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: FadeTransition(
+                        opacity: _fadeAnim,
+                        child: Padding(
+                          padding: EdgeInsets.only(top: titleTopPadding),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'GRAVITY',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFF202020),
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 2.8,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Configurator',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFE94560),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 4,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              Positioned(
-                left: 60,
-                right: 60,
-                bottom: constraints.maxHeight * 0.27,
-                child: SlideTransition(
-                  position: _slideAnim,
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: Consumer<AuthProvider>(
-                      builder: (context, auth, _) {
-                        final isLoading = auth.status == AuthStatus.loading;
-                        return SizedBox(
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: isLoading
-                                ? null
-                                : () => _handleGetStarted(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.accentColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                  Positioned(
+                    top: carouselTop,
+                    left: 0,
+                    right: 0,
+                    height: carouselHeight,
+                    child: FadeTransition(
+                      opacity: _fadeAnim,
+                      child: CarouselWidget3D(
+                        radius: contentWidth,
+                        childScale: 0.9,
+                        dragEndBehavior: DragEndBehavior.snapToNearest,
+                        backgroundTapBehavior:
+                            BackgroundTapBehavior.startAndSnapToNearest,
+                        childTapBehavior: ChildTapBehavior.transparent,
+                        isDragInteractive: true,
+                        onlyRenderForeground: false,
+                        clockwise: false,
+                        backgroundBlur: 3,
+                        spinWhileRotating: true,
+                        shouldRotate: true,
+                        timeForFullRevolution: 20000,
+                        snapTimeInMillis: 100,
+                        perspectiveStrength: 0.001,
+                        dragSensitivity: 1.0,
+                        onValueChanged: (newValue) {
+                          debugPrint('$newValue');
+                        },
+                        background: null,
+                        core: null,
+                        children: List.generate(
+                          _carouselImages.length,
+                          (index) => CarouselChild(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                width: carouselImageWidth,
+                                height: carouselHeight,
+                                child: Image.asset(
+                                  _carouselImages[index],
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              elevation: 8,
-                              shadowColor: AppTheme.accentColor.withAlpha(128),
                             ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Get Started',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 1.5,
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      Icon(Icons.arrow_forward, size: 18),
-                                    ],
-                                  ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  Positioned(
+                    left: horizontalButtonInset,
+                    right: horizontalButtonInset,
+                    bottom: buttonBottom,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: FadeTransition(
+                        opacity: _fadeAnim,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Luxury Meets Comfort',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF202020),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            SizedBox(
+                              height: 54,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () => _handleGetStarted(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.accentColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: AppTheme.accentColor.withAlpha(
+                                    128,
+                                  ),
+                                  splashFactory: NoSplash.splashFactory,
+                                  overlayColor: Colors.transparent,
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Get Started',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Icon(Icons.arrow_forward, size: 18),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),

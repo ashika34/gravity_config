@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 
 class CommonWaveDesign extends StatelessWidget {
   final double heightFactor;
+  final double minHeight;
+  final double maxHeight;
 
-  const CommonWaveDesign({super.key, this.heightFactor = 0.22});
+  const CommonWaveDesign({
+    super.key,
+    this.heightFactor = 0.22,
+    this.minHeight = 120,
+    this.maxHeight = 240,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final height = (MediaQuery.sizeOf(context).height * heightFactor)
+        .clamp(minHeight, maxHeight)
+        .toDouble();
     return Align(
       alignment: Alignment.bottomCenter,
       child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * heightFactor,
+        height: height,
         width: double.infinity,
         child: CustomPaint(painter: _CommonWavePainter()),
       ),

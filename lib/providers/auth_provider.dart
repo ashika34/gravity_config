@@ -11,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
   UserModel? _user;
+  Future<bool>? _loginRequest;
 
   AuthProvider(this._apiService);
 
@@ -30,7 +31,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login() async {
+  Future<bool> login() {
+    return _loginRequest ??= _performLogin();
+  }
+
+  Future<bool> _performLogin() async {
     _status = AuthStatus.loading;
     _errorMessage = null;
     notifyListeners();
@@ -50,11 +55,15 @@ class AuthProvider extends ChangeNotifier {
       _user = loginResponse.user;
       _status = AuthStatus.authenticated;
       notifyListeners();
+      _loginRequest = null;
       return true;
     } catch (e) {
-      _errorMessage = e is ApiException ? e.message : 'Login failed. Please try again.';
+      _errorMessage = e is ApiException
+          ? e.message
+          : 'Login failed. Please try again.';
       _status = AuthStatus.error;
       notifyListeners();
+      _loginRequest = null;
       return false;
     }
   }
