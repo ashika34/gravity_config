@@ -154,7 +154,7 @@ class _WideLayout extends StatelessWidget {
                   children: [
                     _DesignHeader(detail: detail),
                     const SizedBox(height: 20),
-                    Expanded(child: _LayeredImage(provider: provider)),
+                    Expanded(child: _SeatPreview(provider: provider)),
                   ],
                 ),
               ),
@@ -213,7 +213,7 @@ class _NarrowLayout extends StatelessWidget {
                       padding: EdgeInsets.symmetric(
                         horizontal: horizontalInset,
                       ),
-                      child: _LayeredImage(provider: provider),
+                      child: _SeatPreview(provider: provider),
                     ),
                   ),
                   _LayerSelectorPanel(detail: detail, provider: provider),
@@ -280,6 +280,153 @@ class _DesignHeader extends StatelessWidget {
 
 // ─── Stacked / layered image ──────────────────────────────────────────────────
 
+enum _SeatBackground {
+  white('White', Colors.white),
+  grey('Grey', Color(0xFF9E9E9E)),
+  black('Black', Colors.black);
+
+  final String label;
+  final Color color;
+
+  const _SeatBackground(this.label, this.color);
+}
+
+class _SeatPreview extends StatefulWidget {
+  final DesignDetailProvider provider;
+
+  const _SeatPreview({required this.provider});
+
+  @override
+  State<_SeatPreview> createState() => _SeatPreviewState();
+}
+
+class _SeatPreviewState extends State<_SeatPreview> {
+  _SeatBackground _selectedBackground = _SeatBackground.white;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = constraints.maxWidth < constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+
+        return Center(
+          child: SizedBox.square(
+            dimension: side,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: _selectedBackground.color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _LayeredImage(provider: widget.provider),
+                  Positioned(
+                    right: 14,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final option in _SeatBackground.values) ...[
+                            _BackgroundSwatch(
+                              option: option,
+                              isSelected: option == _selectedBackground,
+                              onTap: () =>
+                                  setState(() => _selectedBackground = option),
+                            ),
+                            if (option != _SeatBackground.values.last)
+                              const SizedBox(height: 12),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BackgroundSwatch extends StatelessWidget {
+  final _SeatBackground option;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _BackgroundSwatch({
+    required this.option,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: option.label,
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: '${option.label} seat background',
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 38,
+            height: 38,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: isSelected
+                    ? AppTheme.accentColor
+                    : const Color(0xFF5A5A5A),
+                width: isSelected ? 3 : 1.5,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: option.color,
+                shape: BoxShape.circle,
+                border: option == _SeatBackground.white
+                    ? Border.all(color: const Color(0xFFD0D0D0))
+                    : null,
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      size: 18,
+                      color: option == _SeatBackground.black
+                          ? Colors.white
+                          : Colors.black,
+                    )
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LayeredImage extends StatelessWidget {
   final DesignDetailProvider provider;
 
@@ -288,33 +435,30 @@ class _LayeredImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final detail = provider.detail!;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Variant layers in sort_order (layers are already sorted)
-          for (var i = 0; i < detail.layers.length; i++)
-            Builder(
-              builder: (ctx) {
-                final variant = provider.getSelectedVariant(i);
-                if (variant == null) return const SizedBox.shrink();
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: _NetworkLayerImage(
-                    key: ValueKey(variant.image),
-                    url: variant.image,
-                  ),
-                );
-              },
-            ),
-          // Base image (bottom layer)
-          if (detail.baseImage != null)
-            _NetworkLayerImage(url: detail.baseImage!)
-          else
-            Container(color: Colors.white),
-        ],
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Variant layers in sort_order (layers are already sorted)
+        for (var i = 0; i < detail.layers.length; i++)
+          Builder(
+            builder: (ctx) {
+              final variant = provider.getSelectedVariant(i);
+              if (variant == null) return const SizedBox.shrink();
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _NetworkLayerImage(
+                  key: ValueKey(variant.image),
+                  url: variant.image,
+                ),
+              );
+            },
+          ),
+        // Base image (bottom layer)
+        if (detail.baseImage != null)
+          _NetworkLayerImage(url: detail.baseImage!)
+        else
+          Container(color: Colors.white),
+      ],
     );
   }
 }
