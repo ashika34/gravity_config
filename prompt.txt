@@ -1,6 +1,6 @@
 Create a flutter project which will work responsive in web app and mobile
 base url : https://gravity.lijutharayil.com
-package name : com.gravity.configurator
+package name : com.yaco.configurator
 screen 1 : login screen - use the car_seat.png image as backgound image and add some overlay, attractive screen with a single button called "Get started"
 clicking on it should call following POST api : /api/login
 payload is 

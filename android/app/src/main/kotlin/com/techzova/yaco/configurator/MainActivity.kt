@@ -1,4 +1,4 @@
-package com.gravity.configurator
+package com.techzova.yaco.configurator
 
 import io.flutter.embedding.android.FlutterActivity
 

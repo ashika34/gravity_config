@@ -8,7 +8,7 @@
 PRODUCT_NAME = configurator
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.gravity.configurator
+PRODUCT_BUNDLE_IDENTIFIER = com.yaco.configurator
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.gravity. All rights reserved.
